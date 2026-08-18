@@ -1,0 +1,116 @@
+{% extends "core/base.html" %}
+{% block title %}{{ p.title }} — idealHome{% endblock %}
+{% block content %}
+<main class="wrap detail">
+<a class="back" href="/imoveis/">← Voltar ao catálogo</a>
+
+<div class="detail-top">
+  <div>
+    <p class="eyebrow dark">{{ p.typology }} · {{ p.bathrooms }}</p>
+    <h1>{{ p.title }}</h1>
+    {% if p.address %}<div class="address-block"><span class="label">ENDEREÇO</span><strong>{{ p.address }}</strong></div>{% endif %}
+    <div class="location-block"><span class="label">LOCALIZAÇÃO</span><span>⌖ {% if p.parish %}{{ p.parish }}{% endif %}{% if p.municipality %}, {{ p.municipality }}{% endif %}{% if p.district %}, {{ p.district }}{% endif %}</span></div>
+    <div class="reference-block"><span class="label">CÓDIGO DE REFERÊNCIA</span><strong>IH-{{ p.id }}</strong></div>
+  </div>
+  <div class="detail-price">{% if p.price %}{{ p.price|floatformat:0 }} €{% else %}Preço sob consulta{% endif %}</div>
+</div>
+
+{% if images %}
+<div class="gallery">
+  <div class="main-photo">
+    <img id="mainImage" src="{{ images.0 }}" referrerpolicy="no-referrer" alt="{{ p.title }}">
+    <button type="button" class="arrow left" onclick="move(-1)">‹</button>
+    <button type="button" class="arrow right" onclick="move(1)">›</button>
+    <div class="counter"><span id="counter">1</span> / {{ images|length }}</div>
+  </div>
+  <div class="thumbs">
+    {% for img in images|slice:":12" %}<button type="button" onclick="show({{ forloop.counter0 }})"><img src="{{ img }}" loading="lazy" referrerpolicy="no-referrer" alt="Foto {{ forloop.counter }}"></button>{% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="detail-grid">
+  <section class="detail-main">
+    <h2>Sobre este imóvel</h2>
+    <div class="description">{{ p.description|linebreaks }}</div>
+    <h2>Características</h2>
+    <div class="features">{{ p.features }}</div>
+  </section>
+
+  <aside class="contact-box visit-box">
+    <div id="visitFormArea">
+      <span class="eyebrow dark">INTERESSE NESTE IMÓVEL?</span>
+      <h2>Agendar visita</h2>
+      <p>Preencha os dados abaixo para solicitar uma visita a este imóvel.</p>
+
+      <form id="visitForm" onsubmit="submitVisit(event)">
+        <div class="form-group"><label for="clientName">Nome completo *</label><input id="clientName" type="text" required autocomplete="name" placeholder="O seu nome"></div>
+        <div class="form-group"><label for="clientPhone">Telefone *</label><input id="clientPhone" type="tel" required autocomplete="tel" placeholder="O seu telefone"></div>
+        <div class="form-group"><label for="clientEmail">E-mail *</label><input id="clientEmail" type="email" required autocomplete="email" placeholder="O seu e-mail"></div>
+        <div class="form-row">
+          <div class="form-group"><label for="visitDate">Data pretendida *</label><input id="visitDate" type="date" required></div>
+          <div class="form-group"><label for="visitTime">Horário *</label><input id="visitTime" type="time" required></div>
+        </div>
+        <div class="form-group"><label for="people">Número de pessoas *</label><select id="people" required><option value="">Selecionar</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5 ou mais</option></select></div>
+        <div class="form-group"><label for="message">Observações</label><textarea id="message" rows="3" placeholder="Alguma informação adicional?"></textarea></div>
+        <button class="button visit-button" type="submit">Confirmar pedido de visita</button>
+      </form>
+    </div>
+
+    <div id="referenceStep" class="reference-step" hidden>
+      <div class="success-icon">✓</div>
+      <h2>Pedido preparado</h2>
+      <p>Para concluir o agendamento desta visita, é necessário obter o <strong>código de referência</strong> do imóvel junto do nosso agente.</p>
+      <div class="reference-warning"><strong>Código de referência necessário</strong><p>Solicite o código pelo WhatsApp. A mensagem já levará os dados do imóvel e do seu pedido.</p></div>
+      <a id="whatsappButton" class="button whatsapp-button" href="#" target="_blank" rel="noopener">Pedir código de referência pelo WhatsApp</a>
+      <button type="button" class="change-request" onclick="backToForm()">Voltar ao formulário</button>
+    </div>
+  </aside>
+</div>
+</main>
+
+{{ images|json_script:"images-data" }}
+<script>
+const data = JSON.parse(document.getElementById('images-data').textContent);
+let i = 0;
+function show(n){ if(!data.length)return; i=(n+data.length)%data.length; document.getElementById('mainImage').src=data[i]; document.getElementById('counter').textContent=i+1; }
+function move(n){ show(i+n); }
+const today = new Date().toISOString().split('T')[0];
+const dateInput = document.getElementById('visitDate');
+if(dateInput) dateInput.min = today;
+function submitVisit(event){
+  event.preventDefault();
+  const name=document.getElementById('clientName').value.trim();
+  const phone=document.getElementById('clientPhone').value.trim();
+  const email=document.getElementById('clientEmail').value.trim();
+  const date=document.getElementById('visitDate').value;
+  const time=document.getElementById('visitTime').value;
+  const people=document.getElementById('people').value;
+  const message=document.getElementById('message').value.trim();
+  const reference='IH-{{ p.id }}';
+  let text=`Olá, gostaria de solicitar o código de referência para agendar uma visita.\n\nImóvel: {{ p.title|escapejs }}\nReferência: ${reference}\n\nNome: ${name}\nTelefone: ${phone}\nE-mail: ${email}\nData pretendida: ${date}\nHorário pretendido: ${time}\nNúmero de pessoas: ${people}`;
+  if(message) text += `\n\nObservações:\n${message}`;
+  const encodedText = encodeURIComponent(text);
+  const webUrl = 'https://wa.me/351931137427?text=' + encodedText;
+  const appUrl = 'whatsapp://send?phone=351931137427&text=' + encodedText;
+  const whatsappButton = document.getElementById('whatsappButton');
+  whatsappButton.href = webUrl;
+  whatsappButton.onclick = function(event){
+    event.preventDefault();
+    let appOpened = false;
+    const markOpened = () => { appOpened = true; cleanup(); };
+    const cleanup = () => document.removeEventListener('visibilitychange', markOpened);
+    document.addEventListener('visibilitychange', markOpened);
+    window.location.href = appUrl;
+    setTimeout(() => {
+      cleanup();
+      if (!appOpened) window.location.href = webUrl;
+    }, 1200);
+  };
+  document.getElementById('visitFormArea').hidden=true;
+  document.getElementById('referenceStep').hidden=false;
+  document.getElementById('referenceStep').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function backToForm(){ document.getElementById('referenceStep').hidden=true; document.getElementById('visitFormArea').hidden=false; }
+</script>
+{% endblock %}

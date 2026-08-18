@@ -1,0 +1,16 @@
+<article class="card">
+    <a href="/imovel/{{ p.id }}/" class="photo-wrap">
+        {% with imgs=p.images %}
+            {% if imgs %}<img src="{{ imgs.0 }}" loading="lazy" referrerpolicy="no-referrer" alt="{{ p.title }}">
+            {% else %}<div class="no-photo">Sem fotografia</div>{% endif %}
+        {% endwith %}
+        <span class="badge">{{ p.typology|default:"Imóvel" }}</span>
+    </a>
+    <div class="card-body">
+        <div class="price">{% if p.price %}{{ p.price|floatformat:0 }} €{% else %}Preço sob consulta{% endif %}</div>
+        <h3><a href="/imovel/{{ p.id }}/">{{ p.title }}</a></h3>
+        {% if p.address %}<p class="address-line"><span>ENDEREÇO</span><strong>{{ p.address }}</strong></p>{% endif %}
+        <p class="location"><span>LOCALIZAÇÃO</span>⌖ {{ p.parish|default:p.location }}{% if p.municipality %}, {{ p.municipality }}{% endif %}</p>
+        <div class="facts"><span>{{ p.typology }}</span><span>{{ p.bathrooms }}</span></div>
+    </div>
+</article>

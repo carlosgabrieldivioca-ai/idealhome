@@ -1,0 +1,58 @@
+{% extends "core/base.html" %}
+{% block title %}Imóveis — idealHome{% endblock %}
+{% block content %}
+<main class="wrap catalog">
+    <div class="catalog-head">
+        <div><p class="eyebrow dark">CATÁLOGO IDEALHOME</p><h1>Imóveis disponíveis</h1><p class="muted">Pesquise apenas entre localizações e endereços existentes na nossa base.</p></div>
+        <div class="result-count">{{ page.paginator.count }} imóveis</div>
+    </div>
+
+    <form class="filters" method="get">
+        <div class="filter-search">
+            <label>ENDEREÇO / LOCALIZAÇÃO</label>
+            <input id="addressSearch" name="q" value="{{ q }}" list="addressList" autocomplete="off" placeholder="Comece a escrever um endereço...">
+            <datalist id="addressList">
+                {% for a in addresses %}<option value="{{ a }}"></option>{% endfor %}
+            </datalist>
+        </div>
+        <div><label>DISTRITO</label><select id="district" name="distrito"><option value="">Todos</option>{% for d in districts %}<option value="{{ d }}" {% if selected_district == d %}selected{% endif %}>{{ d }}</option>{% endfor %}</select></div>
+        <div><label>CONCELHO</label><select id="municipality" name="concelho"><option value="">Todos</option>{% for m in municipalities %}<option value="{{ m }}" {% if selected_municipality == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></div>
+        <div><label>FREGUESIA</label><select id="parish" name="freguesia"><option value="">Todas</option>{% for f in parishes %}<option value="{{ f }}" {% if selected_parish == f %}selected{% endif %}>{{ f }}</option>{% endfor %}</select></div>
+        <div><label>TIPOLOGIA</label><select name="tipologia"><option value="Todos">Todas</option>{% for t in typologies %}<option value="{{ t }}" {% if selected_typology == t %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></div>
+        <div><label>PREÇO MÁX.</label><input name="max" value="{{ max_price }}" type="number" placeholder="€"></div>
+        <div class="filter-actions"><button>Pesquisar</button><a href="/imoveis/">Limpar</a></div>
+    </form>
+
+    <div class="cards">
+        {% for p in page.object_list %}{% include "core/card.html" with p=p %}{% empty %}<div class="empty"><h2>Nenhum imóvel encontrado</h2><p>Tente outra localização ou endereço disponível.</p></div>{% endfor %}
+    </div>
+
+    {% if page.paginator.num_pages > 1 %}
+    <div class="pagination">
+        {% if page.has_previous %}<a href="?q={{ q|urlencode }}&distrito={{ selected_district|urlencode }}&concelho={{ selected_municipality|urlencode }}&freguesia={{ selected_parish|urlencode }}&tipologia={{ selected_typology|urlencode }}&max={{ max_price|urlencode }}&page={{ page.previous_page_number }}">← Anterior</a>{% endif %}
+        <span>Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}<a href="?q={{ q|urlencode }}&distrito={{ selected_district|urlencode }}&concelho={{ selected_municipality|urlencode }}&freguesia={{ selected_parish|urlencode }}&tipologia={{ selected_typology|urlencode }}&max={{ max_price|urlencode }}&page={{ page.next_page_number }}">Próxima →</a>{% endif %}
+    </div>
+    {% endif %}
+</main>
+<script>
+const district = document.getElementById('district');
+const municipality = document.getElementById('municipality');
+const parish = document.getElementById('parish');
+const selectedMunicipality = "{{ selected_municipality|escapejs }}";
+const selectedParish = "{{ selected_parish|escapejs }}";
+
+district.addEventListener('change', () => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('distrito', district.value);
+    params.delete('concelho'); params.delete('freguesia'); params.delete('page');
+    window.location.search = params.toString();
+});
+municipality.addEventListener('change', () => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('concelho', municipality.value);
+    params.delete('freguesia'); params.delete('page');
+    window.location.search = params.toString();
+});
+</script>
+{% endblock %}
